@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Step-Up Investment Calculator</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body { font-family: Arial; padding: 20px; }
+    label, input { display: block; margin: 10px 0; }
+    button { padding: 10px; font-size: 16px; }
+  </style>
+</head>
+<body>
+  <h2>Step-Up Investment Calculator</h2>
+
+  <label>Initial Investment (₹):
+    <input id="initial" type="number" value="10000">
+  </label>
+  <label>Step-Up % per year:
+    <input id="stepup" type="number" value="10">
+  </label>
+  <label>Annual Return %:
+    <input id="return" type="number" value="12">
+  </label>
+  <label>Years:
+    <input id="years" type="number" value="30">
+  </label>
+  <button onclick="calculate()">Calculate</button>
+
+  <h3 id="summary"></h3>
+  <canvas id="chart" width="800" height="400"></canvas>
+
+  <script>
+    async function calculate() {
+      const data = {
+        initial: document.getElementById('initial').value,
+        step_up: document.getElementById('stepup').value,
+        return_rate: document.getElementById('return').value,
+        years: document.getElementById('years').value
+      };
+
+      const res = await fetch('https://your-backend-url.onrender.com/calculate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      const json = await res.json();
+
+      document.getElementById('summary').innerText =
+        `Total Invested: ₹${json.total_invested.toLocaleString()} | Final Corpus: ₹${json.final_corpus.toLocaleString()} | Returns: ₹${json.total_returns.toLocaleString()}`;
+
+      const labels = json.details.map(d => d.month);
+      const invested = json.details.map(d => d.invested);
+      const corpus = json.details.map(d => d.corpus);
+
+      new Chart(document.getElementById('chart'), {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [
+            { label: 'Total Invested', data: invested, borderColor: 'blue', fill: false },
+            { label: 'Expected Corpus', data: corpus, borderColor: 'green', fill: false }
+          ]
+        }
+      });
+    }
+  </script>
+</body>
+</html>
