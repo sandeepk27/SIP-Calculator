@@ -3,56 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SIP & Step-Up Calculator</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background-color: #f9f9f9;
-      margin: 0;
-      padding: 20px;
-    }
-    .container {
-      max-width: 700px;
-      margin: auto;
-      background: #fff;
-      padding: 30px;
-      border-radius: 10px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
-    }
-    h2 {
-      text-align: center;
-      margin-bottom: 20px;
-    }
-    .tab-button {
-      margin: 10px 5px;
-      padding: 10px 20px;
-      background-color: #007BFF;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-    }
-    .tab-button.active {
-      background-color: #0056b3;
-    }
-    .tab-content {
-      display: none;
-    }
-    .tab-content.active {
-      display: block;
-    }
-    input[type=range] {
-      width: 100%;
-    }
-    .label {
-      font-weight: bold;
-      margin-top: 10px;
-      display: block;
-    }
-    canvas {
-      margin-top: 20px;
-    }
-  </style>
+  <title>SIP Calculator</title>
+  <link rel="stylesheet" href=.style.css>
 </head>
 <body>
   <div class="container">
@@ -97,76 +49,6 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script>
-    let chart;
-
-    function switchTab(tab) {
-      document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
-      document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
-      document.getElementById(tab).classList.add('active');
-      document.querySelector(`[onclick="switchTab('${tab}')"]`).classList.add('active');
-    }
-
-    document.querySelectorAll('input[type=range]').forEach(range => {
-      range.oninput = () => {
-        document.getElementById(range.id + 'Val').innerText = range.value;
-      }
-    });
-
-    function calculateSIP() {
-      const amount = parseFloat(document.getElementById('sipAmount').value);
-      const rate = parseFloat(document.getElementById('sipReturn').value) / 100 / 12;
-      const months = parseInt(document.getElementById('sipYears').value) * 12;
-
-      let corpus = 0;
-      for (let i = 0; i < months; i++) {
-        corpus = (corpus + amount) * (1 + rate);
-      }
-      const invested = amount * months;
-      showResults('sipResults', invested, corpus);
-    }
-
-    function calculateStepUp() {
-      let amount = parseFloat(document.getElementById('stepAmount').value);
-      const stepUp = parseFloat(document.getElementById('stepPercent').value);
-      const rate = parseFloat(document.getElementById('stepReturn').value) / 100 / 12;
-      const years = parseInt(document.getElementById('stepYears').value);
-      const months = years * 12;
-
-      let corpus = 0;
-      let invested = 0;
-
-      for (let year = 0; year < years; year++) {
-        for (let month = 0; month < 12; month++) {
-          corpus = (corpus + amount) * (1 + rate);
-          invested += amount;
-        }
-        amount *= (1 + stepUp / 100);
-      }
-      showResults('stepupResults', invested, corpus);
-    }
-
-    function showResults(elementId, invested, corpus) {
-      const returns = corpus - invested;
-      document.getElementById(elementId).innerHTML = `
-        <p><b>Total Invested:</b> ₹${invested.toFixed(2)}</p>
-        <p><b>Expected Returns:</b> ₹${returns.toFixed(2)}</p>
-        <p><b>Total Corpus:</b> ₹${corpus.toFixed(2)}</p>
-      `;
-
-      if (chart) chart.destroy();
-      chart = new Chart(document.getElementById("chart"), {
-        type: 'bar',
-        data: {
-          labels: ['Invested', 'Returns', 'Corpus'],
-          datasets: [{
-            label: 'Amount (₹)',
-            data: [invested, returns, corpus],
-            backgroundColor: ['#ffc107', '#28a745', '#007bff']
-          }]
-        }
-      });
-    }
-  </script>
+  <script src="script.js"></script>
 </body>
 </html>
