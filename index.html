@@ -1,106 +1,172 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Step-Up Investment Calculator</title>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SIP & Step-Up Calculator</title>
   <style>
     body {
-      font-family: sans-serif;
+      font-family: Arial, sans-serif;
+      background-color: #f9f9f9;
+      margin: 0;
+      padding: 20px;
+    }
+    .container {
+      max-width: 700px;
+      margin: auto;
+      background: #fff;
       padding: 30px;
-      background: #f0f4f8;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    h2 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .tab-button {
+      margin: 10px 5px;
+      padding: 10px 20px;
+      background-color: #007BFF;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .tab-button.active {
+      background-color: #0056b3;
+    }
+    .tab-content {
+      display: none;
+    }
+    .tab-content.active {
+      display: block;
     }
     input[type=range] {
       width: 100%;
     }
-    .container {
-      max-width: 600px;
-      margin: auto;
-      background: white;
-      padding: 20px;
-      border-radius: 12px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    .label {
+      font-weight: bold;
+      margin-top: 10px;
+      display: block;
     }
-    .result {
+    canvas {
       margin-top: 20px;
     }
   </style>
 </head>
 <body>
-<div class="container">
-  <h2>Step-Up Investment Calculator</h2>
+  <div class="container">
+    <h2>SIP & Step-Up Investment Calculator</h2>
+    <div>
+      <button class="tab-button active" onclick="switchTab('sip')">SIP Calculator</button>
+      <button class="tab-button" onclick="switchTab('stepup')">Step-Up Calculator</button>
+    </div>
 
-  <label>Monthly Investment: ₹<span id="amountVal">10000</span></label>
-  <input type="range" id="amount" min="1000" max="100000" step="1000" value="10000">
+    <div id="sip" class="tab-content active">
+      <label class="label">Monthly Investment: ₹<span id="sipAmountVal">10000</span></label>
+      <input type="range" id="sipAmount" min="1000" max="100000" step="1000" value="10000">
 
-  <label>Step-up % per Year: <span id="stepUpVal">10</span>%</label>
-  <input type="range" id="stepUp" min="0" max="50" value="10">
+      <label class="label">Annual Return %: <span id="sipReturnVal">12</span>%</label>
+      <input type="range" id="sipReturn" min="1" max="20" value="12">
 
-  <label>Annual Return %: <span id="returnVal">12</span>%</label>
-  <input type="range" id="return" min="1" max="20" value="12">
+      <label class="label">Investment Duration: <span id="sipYearsVal">10</span> Years</label>
+      <input type="range" id="sipYears" min="1" max="30" value="10">
 
-  <label>Investment Duration: <span id="yearsVal">10</span> Years</label>
-  <input type="range" id="years" min="1" max="30" value="10">
+      <button onclick="calculateSIP()">Calculate SIP</button>
+      <div id="sipResults"></div>
+    </div>
 
-  <button onclick="calculate()">Calculate</button>
+    <div id="stepup" class="tab-content">
+      <label class="label">Monthly Investment: ₹<span id="stepAmountVal">10000</span></label>
+      <input type="range" id="stepAmount" min="1000" max="100000" step="1000" value="10000">
 
-  <div class="result" id="resultBox">
-    <h3>Results</h3>
-    <p><b>Total Invested:</b> ₹<span id="invested"></span></p>
-    <p><b>Expected Returns:</b> ₹<span id="returns"></span></p>
-    <p><b>Total Corpus:</b> ₹<span id="corpus"></span></p>
-    <canvas id="myChart"></canvas>
+      <label class="label">Step-up % per Year: <span id="stepPercentVal">10</span>%</label>
+      <input type="range" id="stepPercent" min="0" max="50" value="10">
+
+      <label class="label">Annual Return %: <span id="stepReturnVal">12</span>%</label>
+      <input type="range" id="stepReturn" min="1" max="20" value="12">
+
+      <label class="label">Investment Duration: <span id="stepYearsVal">10</span> Years</label>
+      <input type="range" id="stepYears" min="1" max="30" value="10">
+
+      <button onclick="calculateStepUp()">Calculate Step-Up</button>
+      <div id="stepupResults"></div>
+    </div>
+
+    <canvas id="chart" width="600" height="300"></canvas>
   </div>
-</div>
 
-<script>
-const amount = document.getElementById('amount');
-const stepUp = document.getElementById('stepUp');
-const returnP = document.getElementById('return');
-const years = document.getElementById('years');
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    let chart;
 
-amount.oninput = () => document.getElementById('amountVal').innerText = amount.value;
-stepUp.oninput = () => document.getElementById('stepUpVal').innerText = stepUp.value;
-returnP.oninput = () => document.getElementById('returnVal').innerText = returnP.value;
-years.oninput = () => document.getElementById('yearsVal').innerText = years.value;
+    function switchTab(tab) {
+      document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+      document.getElementById(tab).classList.add('active');
+      document.querySelector(`[onclick="switchTab('${tab}')"]`).classList.add('active');
+    }
 
-let chart;
-
-function calculate() {
-  fetch("https://sip-calculator-ya0j.onrender.com", {
-    method: "POST",
-    headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({
-      monthly_amount: amount.value,
-      step_up_percent: stepUp.value,
-      return_percent: returnP.value,
-      years: years.value
-    })
-  })
-  .then(res => res.json())
-  .then(data => {
-    document.getElementById("invested").innerText = data.total_invested.toLocaleString();
-    document.getElementById("returns").innerText = data.total_returns.toLocaleString();
-    document.getElementById("corpus").innerText = data.total_corpus.toLocaleString();
-
-    const labels = data.results.map(r => "Year " + r.year);
-    const invested = data.results.map(r => r.invested);
-    const corpus = data.results.map(r => r.corpus);
-
-    if (chart) chart.destroy();
-    chart = new Chart(document.getElementById("myChart"), {
-      type: "line",
-      data: {
-        labels: labels,
-        datasets: [
-          { label: "Invested", data: invested, borderColor: "#888", fill: false },
-          { label: "Corpus", data: corpus, borderColor: "#007bff", fill: false }
-        ]
+    document.querySelectorAll('input[type=range]').forEach(range => {
+      range.oninput = () => {
+        document.getElementById(range.id + 'Val').innerText = range.value;
       }
     });
-  });
-}
-</script>
+
+    function calculateSIP() {
+      const amount = parseFloat(document.getElementById('sipAmount').value);
+      const rate = parseFloat(document.getElementById('sipReturn').value) / 100 / 12;
+      const months = parseInt(document.getElementById('sipYears').value) * 12;
+
+      let corpus = 0;
+      for (let i = 0; i < months; i++) {
+        corpus = (corpus + amount) * (1 + rate);
+      }
+      const invested = amount * months;
+      showResults('sipResults', invested, corpus);
+    }
+
+    function calculateStepUp() {
+      let amount = parseFloat(document.getElementById('stepAmount').value);
+      const stepUp = parseFloat(document.getElementById('stepPercent').value);
+      const rate = parseFloat(document.getElementById('stepReturn').value) / 100 / 12;
+      const years = parseInt(document.getElementById('stepYears').value);
+      const months = years * 12;
+
+      let corpus = 0;
+      let invested = 0;
+
+      for (let year = 0; year < years; year++) {
+        for (let month = 0; month < 12; month++) {
+          corpus = (corpus + amount) * (1 + rate);
+          invested += amount;
+        }
+        amount *= (1 + stepUp / 100);
+      }
+      showResults('stepupResults', invested, corpus);
+    }
+
+    function showResults(elementId, invested, corpus) {
+      const returns = corpus - invested;
+      document.getElementById(elementId).innerHTML = `
+        <p><b>Total Invested:</b> ₹${invested.toFixed(2)}</p>
+        <p><b>Expected Returns:</b> ₹${returns.toFixed(2)}</p>
+        <p><b>Total Corpus:</b> ₹${corpus.toFixed(2)}</p>
+      `;
+
+      if (chart) chart.destroy();
+      chart = new Chart(document.getElementById("chart"), {
+        type: 'bar',
+        data: {
+          labels: ['Invested', 'Returns', 'Corpus'],
+          datasets: [{
+            label: 'Amount (₹)',
+            data: [invested, returns, corpus],
+            backgroundColor: ['#ffc107', '#28a745', '#007bff']
+          }]
+        }
+      });
+    }
+  </script>
 </body>
 </html>
