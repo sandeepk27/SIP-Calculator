@@ -1,41 +1,44 @@
 from flask import Flask, request, jsonify
-from flask_cors import CORS
+import math
 
 app = Flask(__name__)
-CORS(app)
 
 @app.route('/calculate', methods=['POST'])
-def calculate():
+def calculate_stepup():
     data = request.get_json()
-    initial = float(data['initial'])
-    step_up = float(data['step_up'])
-    annual_return = float(data['return_rate'])
-    years = int(data['years'])
+    monthly_investment = float(data.get("monthly_amount", 100000))
+    step_up_percent = float(data.get("step_up_percent", 10))
+    return_percent = float(data.get("return_percent", 20))
+    years = int(data.get("years", 30))
 
-    months = years * 12
-    monthly_rate = annual_return / 100 / 12
-    invested = 0
-    corpus = 0
-    result = []
+    results = []
+    total_invested = 0
+    total_value = 0
+    current_monthly = monthly_investment
 
-    current = initial
-    for m in range(1, months + 1):
-        if m != 1 and m % 12 == 1:
-            current *= (1 + step_up / 100)
-        corpus = corpus * (1 + monthly_rate) + current
-        invested += current
-        result.append({
-            "month": m,
-            "invested": round(invested, 2),
-            "corpus": round(corpus, 2)
+    for year in range(1, years + 1):
+        yearly_investment = current_monthly * 12
+        total_invested += yearly_investment
+
+        for month in range(12):
+            total_value = (total_value + current_monthly) * (1 + return_percent / 100 / 12)
+
+        results.append({
+            "year": year,
+            "invested": round(total_invested, 2),
+            "corpus": round(total_value, 2)
         })
 
+        current_monthly *= (1 + step_up_percent / 100)
+
     return jsonify({
-        "details": result,
-        "total_invested": round(invested, 2),
-        "final_corpus": round(corpus, 2),
-        "total_returns": round(corpus - invested, 2)
+        "results": results,
+        "total_invested": round(total_invested, 2),
+        "total_corpus": round(total_value, 2),
+        "total_returns": round(total_value - total_invested, 2)
     })
 
-if __name__ == '__main__':
-    app.run(debug=True)
+if __name__ == "__main__":
+    import os
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host='0.0.0.0', port=port)
